@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Part04_Ch03_SearchLocation</string>
+    <string name="SearchHint">검색어를 입력해주세요</string>
+    <string name="SearchBtnText">검색</string>
+    <string name="Empty_Search_Result">검색 결과가 없습니다.</string>
+</resources>
