@@ -2,26 +2,58 @@ package com.example.part04_ch03_searchlocation
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.core.view.isVisible
 import com.example.part04_ch03_searchlocation.databinding.ActivityMainBinding
+import com.example.part04_ch03_searchlocation.model.LocationLatLngEntity
+import com.example.part04_ch03_searchlocation.model.SearchResultEntity
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding : ActivityMainBinding
+
+    private lateinit var adapter: SearchRecyclerViewAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        initViews()
+        initAdapter()    // 리사이클러뷰 어댑터 초기화
+        initViews()    // 뷰 객체 초기화
+        initData()
+        setData()
 
     }
 
     private fun initViews() = with(binding){
-        EmptySearchResultTextView.isVisible = false
-        SearchRecyclerView.adpater =
+        EmptySearchResultTextView.isVisible = false    // 검색 결과가 없는 경우는 우선 숨겨둔다.
+        SearchRecyclerView.adapter = adapter
     }
+
+    private fun initAdapter() {
+        adapter = SearchRecyclerViewAdapter()
+    }
+
+    private fun initData() {
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun setData() {
+        val dataList = (0..10).map {
+            SearchResultEntity(
+                name = "빌딩 $it",
+                fullAdress = "주소 $it",
+                locationLatLng = LocationLatLngEntity(it.toFloat(),it.toFloat())
+            )
+        }
+        adapter.setSearchResultList(dataList) {
+            Log.d("로그","메인 액티비티 클릭")
+            Toast.makeText(this,"빌딩 이름 : ${it.name} , 주소 : ${it.fullAdress}",Toast.LENGTH_SHORT).show()
+        }
+    }
+
 }
 
 /*

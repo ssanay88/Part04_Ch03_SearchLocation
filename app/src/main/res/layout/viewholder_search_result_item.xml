@@ -26,8 +26,9 @@
         app:layout_constraintTop_toBottomOf="@id/ResultTitleTextView"
         tools:text="부제목" />
 
-<!-- 구분선  -->
+    <!-- 구분선  -->
     <View
+        android:id="@+id/dividerView"
         android:layout_width="0dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
