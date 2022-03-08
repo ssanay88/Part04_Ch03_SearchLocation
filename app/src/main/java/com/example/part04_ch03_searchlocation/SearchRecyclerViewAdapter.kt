@@ -47,9 +47,11 @@ class SearchRecyclerViewAdapter : RecyclerView.Adapter<SearchRecyclerViewAdapter
         return searchResultList.size
     }
 
+
     fun setSearchResultList(searchResultList: List<SearchResultEntity> , searchResultClickListener: (SearchResultEntity) -> Unit) {
         this.searchResultList = searchResultList
         this.searchResultClickListener = searchResultClickListener
+        notifyDataSetChanged()    // 검색 결과를 리사이클러뷰에 알려주는 함수
     }
 
 }

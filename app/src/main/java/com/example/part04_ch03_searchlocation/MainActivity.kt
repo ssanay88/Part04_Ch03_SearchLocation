@@ -1,5 +1,6 @@
 package com.example.part04_ch03_searchlocation
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -8,6 +9,8 @@ import androidx.core.view.isVisible
 import com.example.part04_ch03_searchlocation.databinding.ActivityMainBinding
 import com.example.part04_ch03_searchlocation.model.LocationLatLngEntity
 import com.example.part04_ch03_searchlocation.model.SearchResultEntity
+import com.example.part04_ch03_searchlocation.response.search.Poi
+import com.example.part04_ch03_searchlocation.response.search.Pois
 import com.example.part04_ch03_searchlocation.utillity.RetrofitUtill
 import kotlinx.coroutines.*
 import java.lang.Exception
@@ -42,8 +45,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
         initAdapter()    // 리사이클러뷰 어댑터 초기화
         initViews()    // 뷰 객체 초기화
+        bindViews()
         initData()
-        setData()
+
 
     }
 
@@ -53,6 +57,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     }
 
     private fun bindViews() = with(binding){
+        // 검색 버튼 클릭 시 입력된 키워트로 결과 검색
         SearchBtn.setOnClickListener {
             searchKeyword(SearchEditText.text.toString())
         }
@@ -66,20 +71,26 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         adapter.notifyDataSetChanged()
     }
 
-    private fun setData() {
-        val dataList = (0..10).map {
+    private fun setData(pois: Pois) {
+        val dataList = pois.poi.map {
             SearchResultEntity(
-                name = "빌딩 $it",
-                fullAdress = "주소 $it",
-                locationLatLng = LocationLatLngEntity(it.toFloat(),it.toFloat())
+                name = it.name ?: "빌딩명 없음",
+                fullAdress = makeMainAdress(it),
+                locationLatLng = LocationLatLngEntity(it.noorLat,it.noorLon)
             )
         }
+        // 어댑터에 새로운 dataList를 넣어준다.
         adapter.setSearchResultList(dataList) {
             Log.d("로그","메인 액티비티 클릭")
-            Toast.makeText(this,"빌딩 이름 : ${it.name} , 주소 : ${it.fullAdress}",Toast.LENGTH_SHORT).show()
+            // Toast.makeText(this,"빌딩 이름 : ${it.name} , 주소 : ${it.fullAdress} , 위도/경도 : ${it.locationLatLng}",Toast.LENGTH_SHORT).show()
+            startActivity(
+                Intent(this,MapActivity::class.java)
+            )
+
         }
     }
 
+    // 입력 받은 키워드로 검색하여 리사이클러뷰 초기화
     private fun searchKeyword(keywordString: String) {
 
         // 비동기 프로그래밍 진행 , 검색 시 비동기로 IO스레드에서 메인스레드로 변경
@@ -87,13 +98,18 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         launch(coroutineContext) {
             try {
                 withContext(Dispatchers.IO) {
+                    // 키워드로 위치 API를 불러와준다.
                     val response = RetrofitUtill.apiService.getSearchLocation(
                         keyword = keywordString
                     )
                     if (response.isSuccessful) {
                         val body = response.body()
                         withContext(Dispatchers.Main) {
-                            Log.e("response","$body")
+                            Log.d("response","$body")
+                            // 결과값으로 리사이클러뷰를 바인딩해준다.
+                            body?.let { searchResponse ->
+                                setData(searchResponse.searchPoiInfo.pois)
+                            }
                         }
                     }
                 }
@@ -103,6 +119,23 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         }
 
     }
+
+    private fun makeMainAdress(poi: Poi): String =
+        if (poi.secondNo?.trim().isNullOrEmpty()) {
+            (poi.upperAddrName?.trim() ?: "") + " " +
+                    (poi.middleAddrName?.trim() ?: "") + " " +
+                    (poi.lowerAddrName?.trim() ?: "") + " " +
+                    (poi.detailAddrName?.trim() ?: "") + " " +
+                    poi.firstNo?.trim()
+        } else {
+            (poi.upperAddrName?.trim() ?: "") + " " +
+                    (poi.middleAddrName?.trim() ?: "") + " " +
+                    (poi.lowerAddrName?.trim() ?: "") + " " +
+                    (poi.detailAddrName?.trim() ?: "") + " " +
+                    (poi.firstNo?.trim() ?: "") + " " +
+                    poi.secondNo?.trim()
+        }
+
 
 }
 
