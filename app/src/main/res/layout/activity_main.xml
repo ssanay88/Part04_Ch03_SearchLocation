@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <!-- 검색할 키워드를 입력 -->
     <EditText
         android:id="@+id/SearchEditText"
         android:layout_width="0dp"

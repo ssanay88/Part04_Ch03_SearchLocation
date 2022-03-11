@@ -11,7 +11,7 @@ import retrofit2.http.Header
 import retrofit2.http.Query
 
 
-
+// API를 통해 위치에 대한 정보들을 받아오는 인터페이스
 interface ApiService {
 
     // 키워드를 통해 위치를 검색

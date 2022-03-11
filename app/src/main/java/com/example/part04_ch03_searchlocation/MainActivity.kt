@@ -20,9 +20,9 @@ import kotlin.coroutines.CoroutineContext
 // CoroutineScope : 비동기로 코드 실행
 class MainActivity : AppCompatActivity(), CoroutineScope {
 
-    private lateinit var binding : ActivityMainBinding
+    private lateinit var binding : ActivityMainBinding    // 뷰바인딩
 
-    private lateinit var adapter: SearchRecyclerViewAdapter
+    private lateinit var adapter: SearchRecyclerViewAdapter    // 어댑터 객체
 
     // coroutines 관련
     private lateinit var job: Job
@@ -33,6 +33,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     IO : 네트워킹이나 내부 DB접근 등 백그라운드에서 필요한 작업을 수행
     Default : 크기가 큰 리스트를 다루거나 필터링을 수행하는 등 무거운 연산이 필요한 작업에 사용
      */
+    // 검색 결과를 찾는 과정에 코루틴 사용
+    // Main 스레드에서 IO스레드로 넘어가서 검색 결과를 찾은 후, 다시 Main스레드로 돌아와서 보여준다.
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job    // 어떤 스레드에서 동작할지 명시 , 메인 스레드에서 기본 동작
 
@@ -44,9 +46,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
         job = Job()
 
-        initAdapter()    // 리사이클러뷰 어댑터 초기화
+        initAdapter()    // 리사이클러뷰 어댑터 객체 생성
         initViews()    // 뷰 객체 초기화
-        bindViews()
+        bindViews()    // 버튼에 대한 클릭리스너 설정
         initData()
 
 
@@ -54,39 +56,40 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     private fun initViews() = with(binding){
         EmptySearchResultTextView.isVisible = false    // 검색 결과가 없는 경우는 우선 숨겨둔다.
-        SearchRecyclerView.adapter = adapter
+        SearchRecyclerView.adapter = adapter    // 리사이클러뷰에 생성해둔 어댑터 객체를 연결
     }
 
     private fun bindViews() = with(binding){
         // 검색 버튼 클릭 시 입력된 키워트로 결과 검색
         SearchBtn.setOnClickListener {
-            searchKeyword(SearchEditText.text.toString())
+            searchKeyword(SearchEditText.text.toString())    // 입력한 키워드를 통해 검색 결과를 출력
         }
     }
 
     private fun initAdapter() {
-        adapter = SearchRecyclerViewAdapter()
+        adapter = SearchRecyclerViewAdapter()    // 어댑터 클래스에서 객체 생성
     }
 
     private fun initData() {
-        adapter.notifyDataSetChanged()
+        adapter.notifyDataSetChanged()    // 어댑터에 데이터 변경을 알림
     }
 
+    // 받아온 데이터를 리사이클러뷰 아이템에 넣어준다.
     private fun setData(pois: Pois) {
+        // 받아온 데이터를 SearchResultEntity형태로 리스트로 만들어준다.
         val dataList = pois.poi.map {
             SearchResultEntity(
                 name = it.name ?: "빌딩명 없음",
-                fullAdress = makeMainAdress(it),
-                locationLatLng = LocationLatLngEntity(it.noorLat,it.noorLon)
+                fullAdress = makeMainAdress(it),    // Poi데이터 형태를 이용해 주소로 생성
+                locationLatLng = LocationLatLngEntity(it.noorLat,it.noorLon)    // 좌표
             )
         }
-        // 어댑터에 새로운 dataList를 넣어준다.
+        // 어댑터에 새로운 dataList를 넣어준다. 어댑터에서 선언한 메서드 실행
         adapter.setSearchResultList(dataList) {
-            Log.d("로그","메인 액티비티 클릭")
-            // Toast.makeText(this,"빌딩 이름 : ${it.name} , 주소 : ${it.fullAdress} , 위도/경도 : ${it.locationLatLng}",Toast.LENGTH_SHORT).show()
+            // 지도 액티비티로 이동
             startActivity(
                 Intent(this,MapActivity::class.java).apply{
-                    putExtra(SEARCH_RESULT_EXTRA_KEY, it)
+                    putExtra(SEARCH_RESULT_EXTRA_KEY, it)    // SearchResultEntity를 같이 보내준다.
                 }
             )
 
@@ -100,6 +103,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         // coroutineContext를 통해 메인 스레드에서 시작하는 것을 알린다.
         launch(coroutineContext) {
             try {
+                // IO스레드로 넘어가서 네트워킹 작업을 통해 검색 결과 가져온다.
                 withContext(Dispatchers.IO) {
                     // 키워드로 위치 API를 불러와준다.
                     val response = RetrofitUtill.apiService.getSearchLocation(
